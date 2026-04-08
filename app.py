@@ -1,25 +1,29 @@
 import os
 import re
+import asyncio
 from typing import Any
 
 from dotenv import load_dotenv
 from slack_bolt import App
-from slack_bolt.adapter.socket_mode import SocketModeHandler
+from slack_bolt.adapter.flask import SlackRequestHandler
+from flask import Flask, request
+from pymongo import MongoClient
+from pymongo.server_api import ServerApi
 
-from mcp_client import MCPClient
-from mcp_server import select_db
-
+from agent.query_agent import query_agent
+from tools import get_tools
 
 load_dotenv()
 
+# MongoDB setup
+uri = os.getenv("MONGODB_URI")
+mongo_client = MongoClient(uri, server_api=ServerApi("1"))
 
-app = App(token=os.environ["SLACK_BOT_TOKEN"])
-mcp_client = MCPClient()
-
-
-@app.message("hello")
-def handle_hello_message(say):
-    say("Hello!")
+# Tools and Slack/Flask setup
+tools = get_tools(mongo_client)
+app = App(token=os.environ["SLACK_BOT_TOKEN"], signing_secret=os.environ["SLACK_SIGNING_SECRET"])
+flask_app = Flask(__name__)
+handler = SlackRequestHandler(app)
 
 
 @app.message(re.compile(".*"))
@@ -30,8 +34,6 @@ def handle_all_messages(message: dict[str, Any], say, client, context: dict[str,
     message_text = message.get("text")
     if not isinstance(message_text, str):
         return
-    if message_text.strip().lower() == "hello":
-        return
 
     channel = message.get("channel")
     if not channel:
@@ -40,19 +42,13 @@ def handle_all_messages(message: dict[str, Any], say, client, context: dict[str,
     thinking_message = client.chat_postMessage(channel=channel, text="Thinking...")
     user_id = message.get("user") or context.get("user_id") or "unknown"
 
-    try:
-        mcp_message = mcp_client.process_query(message_text, user_id)
+    try: # main
+        response = asyncio.run(query_agent(message_text, user_id, tools))
     finally:
         if thinking_message.get("ts"):
             client.chat_delete(channel=channel, ts=thinking_message["ts"])
 
-    say(mcp_message)
-
-
-@app.command("/test")
-def handle_test_command(ack, respond):
-    ack()
-    respond("/test command received!")
+    say(text=response)
 
 
 @app.command("/clearbotchat")
@@ -91,10 +87,10 @@ def handle_clearbotchat_command(ack, command: dict[str, Any], client, respond):
             client.chat_delete(channel=channel_id, ts=ts)
             deleted_count += 1
 
-        respond(f"Cleared {deleted_count} message(s) posted by the bot.")
-    except Exception as error:  # pragma: no cover - network/runtime dependent
+        respond(f"✅ Cleared {deleted_count} message(s) posted by the bot.")
+    except Exception as error:
         app.logger.error(f"Error clearing chat: {error}")
-        respond("Failed to clear messages.")
+        respond("❌ Failed to clear messages.")
 
 
 @app.command("/selectdb")
@@ -103,27 +99,39 @@ def handle_selectdb_command(ack, command: dict[str, Any], respond, context: dict
 
     db_name = command.get("text", "").strip()
     channel_id = command.get("channel_id")
+
     if not db_name:
-        respond("invalid db name. Please mention just the db name after the slash command")
+        respond("❌ Invalid db name. Please mention just the db name after the slash command")
         return
 
     user_id = command.get("user_id") or context.get("user_id") or "unknown"
     try:
-        select_db(db_name, user_id)
         respond("DB Selection successfully saved.")
         if channel_id:
             client.conversations_setTopic(channel=channel_id, topic=f"Selected DB: {db_name}")
-    except Exception as error:  # pragma: no cover - network/runtime dependent
+    except Exception as error:
         app.logger.error(str(error))
         respond(f"An error occurred: {error}")
 
 
+@flask_app.route("/slack/events", methods=["POST"])
+def slack_events():
+    return handler.handle(request)
+
+
+@flask_app.route("/check")
+def health_check():
+    return "server up and running!!"
+
+
 if __name__ == "__main__":
     try:
-        mcp_client.connect_to_server(os.getenv("MCP_SERVER_SCRIPT", "./dist/mcp-server.js"))
-        SocketModeHandler(app, os.environ["SLACK_APP_TOKEN"]).start()
-    except Exception as error:  # pragma: no cover - startup/runtime dependent
-        app.logger.error(str(error))
-        mcp_client.cleanup()
-        raise
+        # Verify MongoDB connection
+        mongo_client.admin.command("ping")
+        print("Pinged your deployment. You successfully connected to MongoDB!")
 
+        port = int(os.getenv("PORT", 3000))
+        flask_app.run(host="0.0.0.0", port=port, debug=False)
+    except Exception as error:
+        app.logger.error(str(error))
+        raise
