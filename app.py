@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from slack_bolt import App
 from slack_bolt.adapter.flask import SlackRequestHandler
 from flask import Flask, request
+from werkzeug.serving import is_running_from_reloader
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 
@@ -43,12 +44,12 @@ def handle_all_messages(message: dict[str, Any], say, client, context: dict[str,
     user_id = message.get("user") or context.get("user_id") or "unknown"
 
     try: # main
-        response = asyncio.run(query_agent(message_text, user_id, tools))
+        response = asyncio.run(query_agent(message_text, user_id, mongo_client, tools))
     finally:
         if thinking_message.get("ts"):
             client.chat_delete(channel=channel, ts=thinking_message["ts"])
 
-    say(text=response)
+    say(text=response or "I could not generate a response.")
 
 
 @app.command("/clearbotchat")
@@ -126,12 +127,19 @@ def health_check():
 
 if __name__ == "__main__":
     try:
-        # Verify MongoDB connection
-        mongo_client.admin.command("ping")
-        print("Pinged your deployment. You successfully connected to MongoDB!")
+        # Verify MongoDB connection once in the reloader child process.
+        if is_running_from_reloader():
+            mongo_client.admin.command("ping")
+            print("Pinged your deployment. You successfully connected to MongoDB!")
 
         port = int(os.getenv("PORT", 3000))
-        flask_app.run(host="0.0.0.0", port=port, debug=False)
+        auto_reload = os.getenv("FLASK_RELOAD", "1") == "1"
+        flask_app.run(
+            host="0.0.0.0",
+            port=port,
+            debug=auto_reload,
+            use_reloader=auto_reload,
+        )
     except Exception as error:
         app.logger.error(str(error))
         raise

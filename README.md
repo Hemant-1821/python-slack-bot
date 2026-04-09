@@ -1,6 +1,6 @@
-# Slack Bot to query mongoDB
+# Slack Bot to query MongoDB
 
-Simple Slack Bolt bot in Python with HTTP webhook + ngrok support.
+Simple Slack Bolt bot in Python with Flask, ngrok, and local auto-reload.
 
 ## Features
 
@@ -32,7 +32,7 @@ cd /Users/hemantsingh/Desktop/FAI/python-slack-bot
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python3 app.py
+python3 dev.py
 ```
 
 ## Environment variables
@@ -52,4 +52,5 @@ PORT=3000
 - `mcp_client.py` is still a scaffold (LLM/tool flow is placeholder).
 - `mcp_server.py` uses MongoDB when `MONGODB_URI` is set; otherwise it falls back to in-memory storage.
 - App requires ngrok to expose local port to Slack webhook verification.
+- `dev.py` restarts the server automatically when Python files change.
 
