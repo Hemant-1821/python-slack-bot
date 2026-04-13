@@ -34,19 +34,16 @@ def make_read_from_db_tool(client: MongoClient):
         })
 
         try:
-            cursor = (
-                client[db_name or "sample_mflix"][collection_name or "movies"]
-                .find(query_object or {})
-                .limit(limit or 5)
+            result = list(
+                client[db_name or "sample_mflix"][collection_name or "movies"].find(
+                    filter=query_object or {},
+                    projection=project,
+                    limit=limit or 5,
+                    sort=list(sort.items()) if sort else None
+                )
             )
 
-            if sort:
-                cursor = cursor.sort(list(sort.items()))
-
-            if project:
-                cursor = cursor.projection(project)
-
-            result = list(cursor)
+            result = list(result)
 
             return (
                 json.dumps(result, indent=2, default=str)

@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 def _to_plain_text(content) -> str | None:
     if isinstance(content, str):
         text = content.strip()
@@ -41,10 +40,9 @@ def _to_plain_text(content) -> str | None:
 
     return None
 
-
 async def query_agent(text: str, user_id: str, client, tools) -> str | None:
     model_with_tools = ChatGoogleGenerativeAI(
-        model="gemini-3-flash-preview",
+        model="gemini-3.1-pro-preview",
         temperature=0,
         google_api_key=os.getenv("GOOGLE_API_KEY"),
     ).bind_tools(tools)

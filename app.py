@@ -12,6 +12,7 @@ from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 
 from agent.query_agent import query_agent
+from operations import make_set_selected_db
 from tools import get_tools
 
 load_dotenv()
@@ -97,16 +98,18 @@ def handle_clearbotchat_command(ack, command: dict[str, Any], client, respond):
 @app.command("/selectdb")
 def handle_selectdb_command(ack, command: dict[str, Any], respond, context: dict[str, Any], client):
     ack()
-
     db_name = command.get("text", "").strip()
     channel_id = command.get("channel_id")
 
     if not db_name:
+        # handle wrong db name input
         respond("❌ Invalid db name. Please mention just the db name after the slash command")
         return
 
     user_id = command.get("user_id") or context.get("user_id") or "unknown"
     try:
+        # Save the selected DB for the user in MongoDB
+        make_set_selected_db(mongo_client)(user_id, db_name)
         respond("DB Selection successfully saved.")
         if channel_id:
             client.conversations_setTopic(channel=channel_id, topic=f"Selected DB: {db_name}")
@@ -117,6 +120,11 @@ def handle_selectdb_command(ack, command: dict[str, Any], respond, context: dict
 
 @flask_app.route("/slack/events", methods=["POST"])
 def slack_events():
+    return handler.handle(request)
+
+
+@flask_app.route("/slack/command", methods=["POST"])
+def slack_commands():
     return handler.handle(request)
 
 
