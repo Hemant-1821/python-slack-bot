@@ -5,14 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="45b6f9be-af1a-4cc6-8c2c-096b3881d606" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/operations/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/operations/set_selected_db.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/agent/graph.py" beforeDir="false" afterPath="$PROJECT_DIR$/agent/graph.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/agent/query_agent.py" beforeDir="false" afterPath="$PROJECT_DIR$/agent/query_agent.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tools/read_from_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/tools/read_from_db.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/constants.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

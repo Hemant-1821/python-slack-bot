@@ -1,14 +1,5 @@
 from __future__ import annotations
-
 from typing import Any
-
-from constants import db_keywords
-
-
-def is_db_related_message(msg: str) -> bool:
-    lower = msg.lower()
-    return any(keyword in lower for keyword in db_keywords)
-
 
 def _js_type_name(value: Any) -> str:
     if value is None:

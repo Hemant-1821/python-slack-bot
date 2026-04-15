@@ -27,7 +27,6 @@ app = App(token=os.environ["SLACK_BOT_TOKEN"], signing_secret=os.environ["SLACK_
 flask_app = Flask(__name__)
 handler = SlackRequestHandler(app)
 
-
 @app.message(re.compile(".*"))
 def handle_all_messages(message: dict[str, Any], say, client, context: dict[str, Any]):
     if message.get("subtype") == "bot_message":
