@@ -41,10 +41,14 @@ Use `.env` or shell exports:
 
 ```env
 SLACK_BOT_TOKEN=xoxb-your-bot-token
-ANTHROPIC_API_KEY=your-anthropic-api-key
+SLACK_SIGNING_SECRET=your-slack-signing-secret
+GOOGLE_API_KEY=your-google-api-key
 MONGODB_URI=your-mongodb-connection-string
-MCP_SERVER_SCRIPT=./dist/mcp-server.js
 PORT=3000
+
+# LangSmith tracing
+LANGSMITH_TRACING=true
+LANGSMITH_API_KEY=your-langsmith-api-key
 ```
 
 ## Notes
@@ -53,4 +57,19 @@ PORT=3000
 - `mcp_server.py` uses MongoDB when `MONGODB_URI` is set; otherwise it falls back to in-memory storage.
 - App requires ngrok to expose local port to Slack webhook verification.
 - `dev.py` restarts the server automatically when Python files change.
+- Slack user IDs are normalized into deterministic UUID thread IDs before LangGraph calls (fixes `thread id should be uuid` in LangSmith/LangGraph UI).
+
+## LangGraph Studio (local)
+
+```zsh
+cd /Users/hemantsingh/Desktop/FAI/python-slack-bot
+source .venv/bin/activate
+langgraph dev --config langgraph.json
+```
+
+- Studio config is in `langgraph.json`
+- Graph entrypoint is `agent/studio_graph.py`
+- Studio run disables the custom MongoDB checkpointer and uses LangGraph's built-in persistence
+- Slack app and Studio use the same graph-building code path, but they still run in separate processes
+- Traces appear in LangSmith when `LANGSMITH_TRACING=true`
 

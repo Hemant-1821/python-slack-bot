@@ -1,0 +1,11 @@
+{
+  "python_version": "3.14",
+  "dependencies": [
+    "."
+  ],
+  "graphs": {
+    "slack_db_bot": "./agent/studio_graph.py:graph"
+  },
+  "env": ".env"
+}
+
